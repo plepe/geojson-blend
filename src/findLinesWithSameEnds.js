@@ -72,7 +72,7 @@ function cut (a, ai, aPrefix, b, bi, bPrefix, result, options) {
   const aItem = a.features[ai]
   const bItem = b.features[bi]
 
-  const length = getCommonLength(aItem, bItem, options)
+  const length = getCommonLength(aItem, 0, 1, bItem, 0, 1, options)
   const aLength = turf.length(aItem, { units: 'meters' })
   const bLength = turf.length(bItem, { units: 'meters' })
 
