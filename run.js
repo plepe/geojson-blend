@@ -3,6 +3,7 @@ const fs = require('fs')
 const turf = require('@turf/turf')
 
 const findEqualLines = require('./src/findEqualLines.js')
+const findLinesWithSameEnds = require('./src/findLinesWithSameEnds.js')
 
 const options = {
   distance: 10, // meters
@@ -20,6 +21,10 @@ const result = { type: 'FeatureCollection', features: [] }
 console.log('original:', a.features.length, b.features.length, result.features.length)
 
 findEqualLines(a, b, result, 'hrvn_', 'rlb_', options)
+clearEmpty(a)
+clearEmpty(b)
+
+findLinesWithSameEnds(a, b, result, 'hrvn_', 'rlb_', options)
 clearEmpty(a)
 clearEmpty(b)
 
