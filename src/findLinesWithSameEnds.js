@@ -22,42 +22,20 @@ module.exports = function findLinesWithSameEnds (a, b, result, aPrefix, bPrefix,
       const distances = [ turf.distance(aPoi1, bPoi1, { units: 'meters' }), turf.distance(aPoi1, bPoi2, { units: 'meters' }), turf.distance(aPoi2, bPoi1, { units: 'meters' }), turf.distance(aPoi2, bPoi2, { units: 'meters' }) ]
 
       if (distances[0] < options.distance) {
-        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+        if (cut(a, ai, 1, aPrefix, b, bi, 1, bPrefix, result, options)) {
           restart = true
         }
       } else if (distances[1] < options.distance) {
-        b.features[bi].geometry.coordinates.reverse()
-
-        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+        if (cut(a, ai, 1, aPrefix, b, bi, -1, bPrefix, result, options)) {
           restart = true
-        }
-
-        if (b.features[bi]) {
-          b.features[bi].geometry.coordinates.reverse()
         }
       } else if (distances[2] < options.distance) {
-        a.features[ai].geometry.coordinates.reverse()
-
-        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+        if (cut(a, ai, -1, aPrefix, b, bi, 1, bPrefix, result, options)) {
           restart = true
-        }
-
-        if (a.features[ai]) {
-          a.features[ai].geometry.coordinates.reverse()
         }
       } else if (distances[3] < options.distance) {
-        a.features[ai].geometry.coordinates.reverse()
-        b.features[bi].geometry.coordinates.reverse()
-
-        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+        if (cut(a, ai, -1, aPrefix, b, bi, -1, bPrefix, result, options)) {
           restart = true
-        }
-
-        if (a.features[ai]) {
-          a.features[ai].geometry.coordinates.reverse()
-        }
-        if (b.features[bi]) {
-          b.features[bi].geometry.coordinates.reverse()
         }
       }
     })
@@ -68,20 +46,22 @@ module.exports = function findLinesWithSameEnds (a, b, result, aPrefix, bPrefix,
   }
 }
 
-function cut (a, ai, aPrefix, b, bi, bPrefix, result, options) {
+function cut (a, ai, aDir, aPrefix, b, bi, bDir, bPrefix, result, options) {
   const aItem = a.features[ai]
   const bItem = b.features[bi]
 
-  const length = getCommonLength(aItem, 0, 1, bItem, 0, 1, options)
   const aLength = turf.length(aItem, { units: 'meters' })
   const bLength = turf.length(bItem, { units: 'meters' })
+  const length = getCommonLength(aItem, aDir === 1 ? 0 : aLength, aDir, bItem, bDir === 1 ? 0 : bLength, bDir, options)
 
   if (length == 0) {
     return false
   }
 
   //console.log('length', length)
-  const item = turf.lineSliceAlong(aItem, 0, length, { units: 'meters' })
+  const item = aDir === 1 ?
+    turf.lineSliceAlong(aItem, 0, length, { units: 'meters' }) :
+    turf.lineSliceAlong(aItem, aLength - length, aLength, { units: 'meters' })
 
   Object.entries(aItem.properties).forEach(([k, v]) => {
     item.properties[aPrefix + k] = v
@@ -93,14 +73,18 @@ function cut (a, ai, aPrefix, b, bi, bPrefix, result, options) {
   result.features.push(item)
 
   if (aLength > length) {
-    a.features[ai] = turf.lineSliceAlong(aItem, length, aLength, { units: 'meters' })
+    a.features[ai] = aDir === 1 ?
+      turf.lineSliceAlong(aItem, length, aLength, { units: 'meters' }) :
+      turf.lineSliceAlong(aItem, 0, aLength - length, { units: 'meters' })
     a.features[ai].properties = aItem.properties
   } else {
     a.features[ai] = null
   }
 
   if (bLength > length) {
-    b.features[bi] = turf.lineSliceAlong(bItem, length, bLength, { units: 'meters' })
+    b.features[bi] = bDir === 1 ?
+      turf.lineSliceAlong(bItem, length, bLength, { units: 'meters' }) :
+      turf.lineSliceAlong(bItem, 0, bLength - length, { units: 'meters' })
     b.features[bi].properties = bItem.properties
   } else {
     b.features[bi] = null
