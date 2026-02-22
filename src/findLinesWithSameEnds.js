@@ -24,6 +24,40 @@ module.exports = function findLinesWithSameEnds (a, b, result, aPrefix, bPrefix,
         if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
           restart = true
         }
+      } else if (distances[1] < options.distance) {
+        b.features[bi].geometry.coordinates.reverse()
+
+        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+          restart = true
+        }
+
+        if (b.features[bi]) {
+          b.features[bi].geometry.coordinates.reverse()
+        }
+      } else if (distances[2] < options.distance) {
+        a.features[ai].geometry.coordinates.reverse()
+
+        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+          restart = true
+        }
+
+        if (a.features[ai]) {
+          a.features[ai].geometry.coordinates.reverse()
+        }
+      } else if (distances[3] < options.distance) {
+        a.features[ai].geometry.coordinates.reverse()
+        b.features[bi].geometry.coordinates.reverse()
+
+        if (cut(a, ai, aPrefix, b, bi, bPrefix, result, options)) {
+          restart = true
+        }
+
+        if (a.features[ai]) {
+          a.features[ai].geometry.coordinates.reverse()
+        }
+        if (b.features[bi]) {
+          b.features[bi].geometry.coordinates.reverse()
+        }
       }
     })
 
