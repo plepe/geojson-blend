@@ -4,31 +4,42 @@ const turf = require('@turf/turf')
 
 const distance = 10
 
-let a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
-let b = JSON.parse(fs.readFileSync('rl-basisnetz.geojson'))
+const a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
+const b = JSON.parse(fs.readFileSync('rl-basisnetz.geojson'))
 
-a = splitMultiLineStrings(a)
-b = splitMultiLineStrings(b)
-b = removeIllegalLineStrings(b)
+splitMultiLineStrings(a)
+splitMultiLineStrings(b)
+removeIllegalLineStrings(b)
 
-const result = { type: 'FeatureCollection', features: findEqualLines(a, b, 'hrvn_', 'rlb_') }
+const result = { type: 'FeatureCollection', features: [] }
+
+console.log('original:', a.features.length, b.features.length, result.features.length)
+
+findEqualLines(a, b, result, 'hrvn_', 'rlb_')
+clearEmpty(a)
+clearEmpty(b)
+
+console.log('after equal lines:', a.features.length, b.features.length, result.features.length)
 
 fs.writeFileSync('result.geojson', JSON.stringify(result, null, '  '))
 
-function findEqualLines (a, b, aPrefix, bPrefix) {
-  const result = []
-  console.error('building buffers for a')
+function findEqualLines (a, b, result, aPrefix, bPrefix) {
+  // console.error('building buffers for a')
   const aBuffered = a.features.map(i => turf.buffer(i, distance, { units: 'meters' }))
-  console.error('building buffers for b')
+  // console.error('building buffers for b')
   const bBuffered = b.features.map(i => {
     return turf.buffer(i, distance, { units: 'meters' })
   })
-  console.error('building buffers done')
+  // console.error('building buffers done')
 
   a.features.forEach((aItem, ai) => {
+    if (!aItem) { return }
+
     b.features.forEach((bItem, bi) => {
+      if (!bItem) { return }
+
       if (turf.booleanWithin(aItem, bBuffered[bi]) && turf.booleanWithin(bItem, aBuffered[ai])) {
-        console.error('found', ai, bi)
+        // console.error('found', ai, bi)
         const item = {
           type: 'Feature',
           properties: {},
@@ -42,12 +53,13 @@ function findEqualLines (a, b, aPrefix, bPrefix) {
           item.properties[bPrefix + k] = v
         })
 
-        result.push(item)
+        a[ai] = null
+        b[bi] = null
+
+        result.features.push(item)
       }
     })
   })
-
-  return result
 }
 
 function splitMultiLineStrings (geojson) {
@@ -67,14 +79,19 @@ function splitMultiLineStrings (geojson) {
       })
     }
   })
-
-  return geojson
 }
 
 function removeIllegalLineStrings (geojson) {
   geojson.features = geojson.features.filter(feature => {
     return feature.geometry.coordinates.length >= 2
   })
+}
 
-  return geojson
+function clearEmpty (set) {
+  for (let i = 0; i < set.length; i++) {
+    if (!set[i]) {
+      set.splice(i, 1)
+      i--
+    }
+  }
 }
