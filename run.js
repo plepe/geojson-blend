@@ -2,7 +2,11 @@
 const fs = require('fs')
 const turf = require('@turf/turf')
 
-const distance = 10
+const findEqualLines = require('./src/findEqualLines.js')
+
+const options = {
+  distance: 10, // meters
+}
 
 const a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
 const b = JSON.parse(fs.readFileSync('rl-basisnetz.geojson'))
@@ -15,52 +19,13 @@ const result = { type: 'FeatureCollection', features: [] }
 
 console.log('original:', a.features.length, b.features.length, result.features.length)
 
-findEqualLines(a, b, result, 'hrvn_', 'rlb_')
+findEqualLines(a, b, result, 'hrvn_', 'rlb_', options)
 clearEmpty(a)
 clearEmpty(b)
 
 console.log('after equal lines:', a.features.length, b.features.length, result.features.length)
 
 fs.writeFileSync('result.geojson', JSON.stringify(result, null, '  '))
-
-function findEqualLines (a, b, result, aPrefix, bPrefix) {
-  // console.error('building buffers for a')
-  const aBuffered = a.features.map(i => turf.buffer(i, distance, { units: 'meters' }))
-  // console.error('building buffers for b')
-  const bBuffered = b.features.map(i => {
-    return turf.buffer(i, distance, { units: 'meters' })
-  })
-  // console.error('building buffers done')
-
-  a.features.forEach((aItem, ai) => {
-    if (!aItem) { return }
-
-    b.features.forEach((bItem, bi) => {
-      if (!bItem) { return }
-
-      if (turf.booleanWithin(aItem, bBuffered[bi]) && turf.booleanWithin(bItem, aBuffered[ai])) {
-        // console.error('found', ai, bi)
-        const item = {
-          type: 'Feature',
-          properties: {},
-          geometry: aItem.geometry
-        }
-
-        Object.entries(aItem.properties).forEach(([k, v]) => {
-          item.properties[aPrefix + k] = v
-        })
-        Object.entries(bItem.properties).forEach(([k, v]) => {
-          item.properties[bPrefix + k] = v
-        })
-
-        a[ai] = null
-        b[bi] = null
-
-        result.features.push(item)
-      }
-    })
-  })
-}
 
 function splitMultiLineStrings (geojson) {
   geojson.features.forEach(feature => {
@@ -88,9 +53,9 @@ function removeIllegalLineStrings (geojson) {
 }
 
 function clearEmpty (set) {
-  for (let i = 0; i < set.length; i++) {
-    if (!set[i]) {
-      set.splice(i, 1)
+  for (let i = 0; i < set.features.length; i++) {
+    if (!set.features[i]) {
+      set.features.splice(i, 1)
       i--
     }
   }
