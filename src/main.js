@@ -25,14 +25,16 @@ module.exports = function main (a, b, options) {
    console.error('after ' + methodId, a.features.length, b.features.length, result.features.length)
   })
 
-  //a.features.forEach(item => {
-  //  const properties = {}
-  //  Object.entries(item.properties).forEach(([k, v]) => {
-  //    properties['' + k] = v
-  //  })
-  //  item.properties = properties
-  //  result.features.push(item)
-  //})
+  if (options.include_remaining) {
+    a.features.forEach(item => {
+      const properties = {}
+      Object.entries(item.properties).forEach(([k, v]) => {
+        properties['' + k] = v
+      })
+      item.properties = properties
+      result.features.push(item)
+    })
+  }
 
   //b.features.forEach(item => {
   //  const properties = {}

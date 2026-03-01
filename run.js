@@ -52,8 +52,18 @@ parser.add_argument('--methods', {
   default: defaultOptions.methods
 })
 
+parser.add_argument('--include-remaining', {
+  help: 'Include remaining lines from the input file which were not matched (default: true).',
+  default: 'true'
+})
+
 const options = { ...parser.parse_args() }
 options.methods = options.methods.split(',')
+if (['true', 'false'].includes(options.include_remaining)) {
+  options.include_remaining = options.include_remaining === 'true'
+} else {
+  throw new Error("--include-remaining: expecting 'true' or 'false'")
+}
 
 if (options.input === '-' && options.blend === '-') {
   throw new Error("Can't read both '--file' and '--blend' from stdin.")
