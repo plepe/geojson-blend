@@ -6,6 +6,8 @@ module.exports = function main (a, b, options) {
   splitMultiLineStrings(b)
   removeIllegalLineStrings(a)
   removeIllegalLineStrings(b)
+  removeOtherGeometries(a)
+  removeOtherGeometries(b)
 
   const result = { type: 'FeatureCollection', features: [] }
 
@@ -70,6 +72,12 @@ function splitMultiLineStrings (geojson) {
 function removeIllegalLineStrings (geojson) {
   geojson.features = geojson.features.filter(feature => {
     return feature.geometry.coordinates.length >= 2
+  })
+}
+
+function removeOtherGeometries (geojson) {
+  geojson.features = geojson.features.filter(feature => {
+    return ['LineString', 'MultiLineString'].includes(feature.geometry.type)
   })
 }
 
