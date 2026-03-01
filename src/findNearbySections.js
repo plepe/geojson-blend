@@ -1,14 +1,12 @@
 const turf = require('@turf/turf')
 
 module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, options) {
-  const aBuffered = a.features.map(i => turf.buffer(i, options.distance, { units: 'meters' }))
-
   for (let ai = 0; ai < a.features.length; ai++) {
     const aItem = a.features[ai]
     if (!aItem) { return }
 
-    const aBuffer = aBuffered[ai]
     const aLength = turf.length(aItem, { units: 'meters' })
+    const aBuffer = turf.buffer(aItem, options.distance, { units: 'meters' })
     let match = null
     let maxMatchLength = 0
 
@@ -92,12 +90,10 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
         a.features[ai] = null
       } else {
         a.features[ai] = aRemains[0]
-        aBuffered[ai] = turf.buffer(aRemains[0], options.distance, { units: 'meters' })
         ai-- // try again with rest of line
       }
 
       if (aRemains.length === 2) {
-        aBuffered[a.features.length] = turf.buffer(aRemains[1], options.distance, { units: 'meters' })
         a.features.push(aRemains[1])
       }
     }
