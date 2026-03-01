@@ -63,39 +63,50 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
     })
 
     if (match) {
-      let aRemains = []
       const bItem = b.features[match.index]
+      const newItem = updateRemains(a, ai, bItem, match.aStart, match.aEnd, aPrefix, bPrefix, options)
+      result.features.push(newItem)
 
-      if (match.aStart > 0) {
-        const l = turf.lineSliceAlong(aItem, 0, match.aStart, { units: 'meters' })
-        l.properties = aItem.properties
-        aRemains.push(l)
-      }
-      if (match.aEnd < aLength) {
-        const l = turf.lineSliceAlong(aItem, match.aEnd, aLength, { units: 'meters' })
-        l.properties = aItem.properties
-        aRemains.push(l)
-      }
-
-      const item = turf.lineSliceAlong(aItem, match.aStart, match.aEnd, { units: 'meters' })
-      Object.entries(aItem.properties).forEach(([k, v]) => {
-        item.properties[aPrefix + k] = v
-      })
-      Object.entries(bItem.properties).forEach(([k, v]) => {
-        item.properties[bPrefix + k] = v
-      })
-      result.features.push(item)
-
-      if (aRemains.length === 0) {
-        a.features[ai] = null
-      } else {
-        a.features[ai] = aRemains[0]
+      if (a.features[ai]) {
         ai-- // try again with rest of line
-      }
-
-      if (aRemains.length === 2) {
-        a.features.push(aRemains[1])
       }
     }
   }
+}
+
+function updateRemains (list, index, otherItem, start, end, prefix, otherPrefix, options) {
+  let remains = []
+  const item = list.features[index]
+  const length = turf.length(item, { units: 'meters' })
+
+  if (start > 0) {
+    const l = turf.lineSliceAlong(item, 0, start, { units: 'meters' })
+    l.properties = item.properties
+    remains.push(l)
+  }
+  if (end < length) {
+    const l = turf.lineSliceAlong(item, end, length, { units: 'meters' })
+    l.properties = item.properties
+    remains.push(l)
+  }
+
+  const newItem = turf.lineSliceAlong(item, start, end, { units: 'meters' })
+  Object.entries(item.properties).forEach(([k, v]) => {
+    newItem.properties[prefix + k] = v
+  })
+  Object.entries(otherItem.properties).forEach(([k, v]) => {
+    newItem.properties[otherPrefix + k] = v
+  })
+
+  if (remains.length === 0) {
+    list.features[index] = null
+  } else {
+    list.features[index] = remains[0]
+  }
+
+  if (remains.length === 2) {
+    list.features.push(remains[1])
+  }
+
+  return newItem
 }
