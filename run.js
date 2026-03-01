@@ -5,6 +5,7 @@ const turf = require('@turf/turf')
 const findEqualLines = require('./src/findEqualLines.js')
 const findLinesWithSameEnds = require('./src/findLinesWithSameEnds.js')
 const findIntersectingLines = require('./src/findIntersectingLines.js')
+const findNearbySections = require('./src/findNearbySections.js')
 
 const options = {
   distance: 10, // meters
@@ -33,9 +34,11 @@ findLinesWithSameEnds(a, b, result, 'hrvn_', 'rlb_', options)
  
  console.log('after intersecting lines:', a.features.length, b.features.length, result.features.length)
 
+findNearbySections(a, b, result, 'hrvn_', 'rlb_', options)
 clearEmpty(a)
 clearEmpty(b)
 
+console.log('after nearby sections:', a.features.length, b.features.length, result.features.length)
 
 //a.features.forEach(item => {
 //  const properties = {}
