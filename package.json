@@ -1,5 +1,7 @@
 {
+  "bin": "run.js",
   "dependencies": {
-    "@turf/turf": "^7.3.4"
+    "@turf/turf": "^7.3.4",
+    "argparse": "^2.0.1"
   }
 }

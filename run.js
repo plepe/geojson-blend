@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+const ArgumentParser = require('argparse').ArgumentParser
 const fs = require('fs')
 const turf = require('@turf/turf')
 
@@ -9,17 +10,69 @@ const methods = {
   'nearby-sections': require('./src/findNearbySections.js')
 }
 
-const options = {
+const defaultOptions = {
   distance: 10, // meters
   step: 1, // when testing lines, check every n meters
   methods: ['nearby-sections'], // which methods to use
 }
+defaultOptions.methods = defaultOptions.methods.join(',')
 
-const a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
-const b = JSON.parse(fs.readFileSync('rl-basisnetz.geojson'))
+const parser = new ArgumentParser({
+  add_help: true,
+  description: 'Blend a GeoJSON file with a second GeoJSON file'
+})
+
+parser.add_argument('--input', {
+  help: 'Original GeoJSON file. Use "-" to read from stdin (default).',
+  default: '-'
+})
+
+parser.add_argument('--blend', {
+  help: 'GeoJSON File to blend with. Use "-" to read from stdin.',
+  required: true
+})
+
+parser.add_argument('--blend-prefix', {
+  help: 'When copying properties from the lines of the blend file, prefix the properties by this string.',
+  default: 'blend-'
+})
+
+parser.add_argument('--output', {
+  help: 'Where to write the output file. Use "-" to write to stdout (default).',
+  default: '-'
+})
+
+parser.add_argument('--distance', {
+  help: 'Max. distance in meters for matching lines.',
+  default: defaultOptions.distance
+})
+
+parser.add_argument('--step', {
+  help: 'When iterating over lines, use the specified step distance in meters.',
+  default: defaultOptions.step
+})
+
+parser.add_argument('--methods', {
+  help: 'Use the specified methods for matching (available: ' + Object.keys(methods).join(', ') + ').',
+  default: defaultOptions.methods
+})
+
+const options = { ...parser.parse_args() }
+options.methods = options.methods.split(',')
+
+if (options.input === '-' && options.blend === '-') {
+  throw new Error("Can't read both '--file' and '--blend' from stdin.")
+}
+
+const input = options.input === '-' ? '/dev/stdin' : options.input
+const a = JSON.parse(fs.readFileSync(input))
+
+const blend = options.blend === '-' ? '/dev/stdin' : options.blend
+const b = JSON.parse(fs.readFileSync(blend))
 
 splitMultiLineStrings(a)
 splitMultiLineStrings(b)
+removeIllegalLineStrings(a)
 removeIllegalLineStrings(b)
 
 const result = { type: 'FeatureCollection', features: [] }
@@ -33,7 +86,7 @@ options.methods.forEach(methodId => {
     throw new Error('Method "' + method + '" unknown!')
   }
 
-  method(a, b, result, 'hrvn_', 'rlb_', options)
+  method(a, b, result, '', options.blend_prefix, options)
   clearEmpty(a)
   clearEmpty(b)
 
@@ -58,7 +111,8 @@ options.methods.forEach(methodId => {
 //  result.features.push(item)
 //})
 
-fs.writeFileSync('result.geojson', JSON.stringify(result, null, '  '))
+const output = options.output === '-' ? '/dev/stdout' : options.output
+fs.writeFileSync(output, JSON.stringify(result, null, '  '))
 
 function splitMultiLineStrings (geojson) {
   geojson.features.forEach(feature => {
