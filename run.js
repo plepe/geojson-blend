@@ -8,6 +8,7 @@ const findIntersectingLines = require('./src/findIntersectingLines.js')
 
 const options = {
   distance: 10, // meters
+  step: 1, // when testing lines, check every n meters
 }
 
 const a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
