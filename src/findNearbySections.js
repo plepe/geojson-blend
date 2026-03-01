@@ -8,7 +8,7 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
     const aLength = turf.length(aItem, { units: 'meters' })
     const aBuffer = turf.buffer(aItem, options.distance, { units: 'meters' })
     let match = null
-    let maxMatchLength = 0
+    let minDistance = options.distance
 
     b.features.forEach((bItem, bi) => {
       if (!bItem) { return }
@@ -18,6 +18,8 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
       let aStart = null, aEnd = null
       let bStart = null, bEnd = null
       let bLastPos = null
+      let sumDistance = 0
+      let countSteps = 0
       for (let pos = 0; pos < aLength; pos += options.step) {
         const aPoi = turf.along(aItem, pos, { units: 'meters' })
         const bPoi = turf.nearestPointOnLine(bItem, aPoi, { units: 'meters' })
@@ -27,6 +29,8 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
             aStart = pos
             bStart = bPoi.properties.location
           }
+          sumDistance += bPoi.properties.dist
+          countSteps += 1
           bLastPos = bPoi.properties.location
         } else if (bStart !== null) {
           aEnd = pos - options.step
@@ -48,15 +52,16 @@ module.exports = function findNearbySections (a, b, result, aPrefix, bPrefix, op
 
       if (Math.abs(aEnd - aStart) > options.distance) {
         const similar = Math.abs(bEnd - bStart) / (aEnd - aStart)
+        const avgDistance = sumDistance / countSteps
 
         if (similar > 0.9 && similar < 1.1) {
-          //console.error('found', ai, bi, similar)
-          //console.log('  A', aStart, aEnd, aEnd - aStart)
-          //console.log('  B', bStart, bEnd, bEnd - bStart)
+          //console.error('found', ai, bi, avgDistance)
+          //console.error('  A', aStart, aEnd, aEnd - aStart)
+          //console.error('  B', bStart, bEnd, bEnd - bStart)
           const aMatchLength = aEnd - aStart
-          if (aMatchLength > maxMatchLength) {
+          if (avgDistance < minDistance) {
             match = { index: bi, aStart, aEnd, bStart, bEnd}
-            maxMatchLength = aMatchLength
+            minDistance = avgDistance
           }
         }
       }
