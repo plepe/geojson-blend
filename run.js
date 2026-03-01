@@ -2,14 +2,17 @@
 const fs = require('fs')
 const turf = require('@turf/turf')
 
-const findEqualLines = require('./src/findEqualLines.js')
-const findLinesWithSameEnds = require('./src/findLinesWithSameEnds.js')
-const findIntersectingLines = require('./src/findIntersectingLines.js')
-const findNearbySections = require('./src/findNearbySections.js')
+const methods = {
+  'equal-lines': require('./src/findEqualLines.js'),
+  'lines-with-same-ends': require('./src/findLinesWithSameEnds.js'),
+  'intersecting-lines': require('./src/findIntersectingLines.js'),
+  'nearby-sections': require('./src/findNearbySections.js')
+}
 
 const options = {
   distance: 10, // meters
   step: 1, // when testing lines, check every n meters
+  methods: ['nearby-sections'], // which methods to use
 }
 
 const a = JSON.parse(fs.readFileSync('hauptrad.geojson'))
@@ -21,24 +24,21 @@ removeIllegalLineStrings(b)
 
 const result = { type: 'FeatureCollection', features: [] }
 
-console.log('original:', a.features.length, b.features.length, result.features.length)
+console.error('original:', a.features.length, b.features.length, result.features.length)
 
-findEqualLines(a, b, result, 'hrvn_', 'rlb_', options)
-clearEmpty(a)
-clearEmpty(b)
+options.methods.forEach(methodId => {
+  const method = methods[methodId]
 
-findLinesWithSameEnds(a, b, result, 'hrvn_', 'rlb_', options)
- findIntersectingLines(a, b, result, 'hrvn_', 'rlb_', options)
- clearEmpty(a)
- clearEmpty(b)
- 
- console.log('after intersecting lines:', a.features.length, b.features.length, result.features.length)
+  if (!method) {
+    throw new Error('Method "' + method + '" unknown!')
+  }
 
-findNearbySections(a, b, result, 'hrvn_', 'rlb_', options)
-clearEmpty(a)
-clearEmpty(b)
+  method(a, b, result, 'hrvn_', 'rlb_', options)
+  clearEmpty(a)
+  clearEmpty(b)
 
-console.log('after nearby sections:', a.features.length, b.features.length, result.features.length)
+ console.error('after ' + methodId, a.features.length, b.features.length, result.features.length)
+})
 
 //a.features.forEach(item => {
 //  const properties = {}
