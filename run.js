@@ -4,6 +4,7 @@ const turf = require('@turf/turf')
 
 const findEqualLines = require('./src/findEqualLines.js')
 const findLinesWithSameEnds = require('./src/findLinesWithSameEnds.js')
+const findIntersectingLines = require('./src/findIntersectingLines.js')
 
 const options = {
   distance: 10, // meters
@@ -25,10 +26,33 @@ clearEmpty(a)
 clearEmpty(b)
 
 findLinesWithSameEnds(a, b, result, 'hrvn_', 'rlb_', options)
+ findIntersectingLines(a, b, result, 'hrvn_', 'rlb_', options)
+ clearEmpty(a)
+ clearEmpty(b)
+ 
+ console.log('after intersecting lines:', a.features.length, b.features.length, result.features.length)
+
 clearEmpty(a)
 clearEmpty(b)
 
-console.log('after equal lines:', a.features.length, b.features.length, result.features.length)
+
+//a.features.forEach(item => {
+//  const properties = {}
+//  Object.entries(item.properties).forEach(([k, v]) => {
+//    properties['hrvn_' + k] = v
+//  })
+//  item.properties = properties
+//  result.features.push(item)
+//})
+
+//b.features.forEach(item => {
+//  const properties = {}
+//  Object.entries(item.properties).forEach(([k, v]) => {
+//    properties['rlb_' + k] = v
+//  })
+//  item.properties = properties
+//  result.features.push(item)
+//})
 
 fs.writeFileSync('result.geojson', JSON.stringify(result, null, '  '))
 
