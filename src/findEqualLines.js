@@ -28,8 +28,8 @@ module.exports = function findEqualLines (a, b, result, aPrefix, bPrefix, option
           item.properties[bPrefix + k] = v
         })
 
-        a[ai] = null
-        b[bi] = null
+        a.features[ai] = null
+        b.features[bi] = null
 
         result.features.push(item)
       }
